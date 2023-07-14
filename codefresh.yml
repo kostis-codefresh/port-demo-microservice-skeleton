@@ -1,0 +1,49 @@
+# More examples of Codefresh YAML can be found at
+# https://codefresh.io/docs/docs/yaml-examples/examples/
+
+version: "1.0"
+# Stages can help you organize your steps in stages
+stages:
+  - "clone"
+  - "build"
+  - "deploy"
+
+steps:
+  main_clone:
+    title: "Cloning repository"
+    type: "git-clone"
+    repo: '${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}'
+    revision: "main"
+    stage: "clone"
+
+  build_step:
+    title: "Building Docker image"
+    type: "build"
+    image_name: "kostiscodefresh/port-simple-app"
+    tag: main
+    tags:
+    - "latest"
+    - "v1.0"
+    dockerfile: "Dockerfile"
+    stage: "build"
+    registry: dockerhub
+  deploy_to_k8:
+    title: Deploying to QA cluster
+    type: deploy
+    stage: "deploy"
+    kind: kubernetes 
+    cluster:  qa-virtual-cluster
+    namespace: default
+    file_path: ./manifest.yml
+    env:
+     name: my-qa-env
+     endpoints:
+     - name: app
+       url: https://qa.port.sales-dev.codefresh.io
+     type: kubernetes
+     change: ${{CF_COMMIT_MESSAGE}}
+     filters:
+     - cluster: qa-virtual-cluster
+       namespace: default   
+
+

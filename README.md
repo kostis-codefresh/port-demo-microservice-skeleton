@@ -1,2 +1,2 @@
-# port-demo-microservice-skeleton
-Microservice skeleton for the port demo
+A sample GO web application with Dockerfile
+
