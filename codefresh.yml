@@ -4,17 +4,31 @@
 version: "1.0"
 # Stages can help you organize your steps in stages
 stages:
-  - "clone"
+  - "prepare"
   - "build"
   - "deploy"
 
 steps:
+
+  report_build:
+    title: Report build to port
+    stage: prepare
+    image: kostiscodefresh/port-inject
+    working_directory: IMAGE_WORK_DIR
+    environment:
+    - BLUEPRINT_IDENTIFIER=build
+    - ENTITY_IDENTIFIER=${{CF_BUILD_ID}} 
+    - ENTITY_TITLE=${{CF_PIPELINE_NAME}}
+    - OPERATION=upsert
+    - ENTITY_PROPERTIES={"details":"${{CF_BUILD_URL}}","initiator":"${{CF_BUILD_INITIATOR}}"}
+    - ENTITY_RELATIONS={"for":"${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}"}
+    
   main_clone:
     title: "Cloning repository"
     type: "git-clone"
     repo: '${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}'
     revision: "main"
-    stage: "clone"
+    stage: "prepare"
 
   build_step:
     title: "Building Docker image"
@@ -45,5 +59,16 @@ steps:
      filters:
      - cluster: qa-virtual-cluster
        namespace: default   
-
+  report_deployment:
+    stage: deploy
+    title: Report deployment to port
+    image: kostiscodefresh/port-inject
+    working_directory: IMAGE_WORK_DIR
+    environment:
+    - BLUEPRINT_IDENTIFIER=deployment
+    - ENTITY_IDENTIFIER=${{CF_BUILD_ID}} 
+    - ENTITY_TITLE=${{CF_PIPELINE_NAME}}
+    - OPERATION=upsert
+    - ENTITY_PROPERTIES={"details":"${{CF_BUILD_URL}}","gitHash":"${{CF_SHORT_REVISION}}","version":"1.0"}
+    - ENTITY_RELATIONS={"for":"${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}","target":"qa"} 
 
