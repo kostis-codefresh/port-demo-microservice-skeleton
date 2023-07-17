@@ -18,9 +18,9 @@ steps:
     - ENTITY_IDENTIFIER=${{CF_BUILD_ID}} 
     - ENTITY_TITLE=${{CF_PIPELINE_NAME}}
     - OPERATION=upsert
-    - ENTITY_PROPERTIES={"details":"${{CF_BUILD_URL}}","approver":"${{CF_BUILD_INITIATOR}}"}
+    - ENTITY_PROPERTIES={"details":"${{CF_BUILD_URL}}","approver":"${{CF_BUILD_INITIATOR}}","dashboard":"https://g.codefresh.io/environments"}
     - ENTITY_RELATIONS={"for":"${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}","source":"qa","target":"staging"} 
-    
+
   main_clone:
     title: "Cloning repository"
     type: "git-clone"
