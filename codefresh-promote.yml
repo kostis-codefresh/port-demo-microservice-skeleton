@@ -1,0 +1,61 @@
+# More examples of Codefresh YAML can be found at
+# https://codefresh.io/docs/docs/yaml-examples/examples/
+
+version: "1.0"
+stages:
+  - "prepare"
+  - "promote"
+
+steps:
+
+  report_promotion:
+    title: Report promotion to port
+    stage: prepare
+    image: kostiscodefresh/port-inject
+    working_directory: IMAGE_WORK_DIR
+    environment:
+    - BLUEPRINT_IDENTIFIER=promotion
+    - ENTITY_IDENTIFIER=${{CF_BUILD_ID}} 
+    - ENTITY_TITLE=${{CF_PIPELINE_NAME}}
+    - OPERATION=upsert
+    - ENTITY_PROPERTIES={"details":"${{CF_BUILD_URL}}","approver":"${{CF_BUILD_INITIATOR}}"}
+    - ENTITY_RELATIONS={"for":"${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}","source":"qa","target":"staging"} 
+    
+  main_clone:
+    title: "Cloning repository"
+    type: "git-clone"
+    repo: '${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}'
+    revision: "main"
+    stage: "prepare"
+
+  deploy_to_k8:
+    title: Deploying to Staging cluster
+    type: deploy
+    stage: "promote"
+    kind: kubernetes 
+    cluster:  staging-virtual-cluster
+    namespace: default
+    file_path: ./manifest.yml
+    env:
+     name: my-staging-env
+     endpoints:
+     - name: app
+       url: https://staging.port.sales-dev.codefresh.io
+     type: kubernetes
+     change: ${{CF_COMMIT_MESSAGE}}
+     filters:
+     - cluster: staging-virtual-cluster
+       namespace: default   
+  report_deployment:
+    stage: promote
+    title: Report deployment to port
+    image: kostiscodefresh/port-inject
+    working_directory: IMAGE_WORK_DIR
+    environment:
+    - BLUEPRINT_IDENTIFIER=deployment
+    - ENTITY_IDENTIFIER=${{CF_BUILD_ID}} 
+    - ENTITY_TITLE=${{CF_PIPELINE_NAME}}
+    - OPERATION=upsert
+    - ENTITY_PROPERTIES={"details":"${{CF_BUILD_URL}}","gitHash":"${{CF_SHORT_REVISION}}","version":"1.0"}
+    - ENTITY_RELATIONS={"for":"${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}","target":"staging"} 
+
